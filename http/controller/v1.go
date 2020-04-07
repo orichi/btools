@@ -27,7 +27,7 @@ func GetTsList(c *gin.Context) {
 	}
 
 	exportName := strconv.FormatInt(time.Now().Unix(), 10) + "_ts.txt"
-	export_file.CreateExportFile(exportName)
+	filePath, _ := export_file.CreateExportFile(exportName)
 	for _, item := range listData {
 		req, _ := parse_tools.AddReqItem(item)
 		data, err := req.ParseM3u8()
@@ -38,5 +38,5 @@ func GetTsList(c *gin.Context) {
 	//fmt.Sprintf("attachment; filename=%s", filename)对下载的文件重命名
 	c.Writer.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename=%s", "ts_"+formFile.Filename))
 	c.Writer.Header().Add("Content-Type", "application/octet-stream")
-	c.File(exportName)
+	c.File(filePath)
 }
