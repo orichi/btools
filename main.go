@@ -52,7 +52,7 @@ func main() {
 	}
 
 	if runMethod == "http" {
-		if match, err := regexp.MatchString("^([0-9a-z].)*?:[0-9]+$", extraOptions); err != nil || !match {
+		if match, err := regexp.MatchString("([0-9a-z].)*?:[0-9]+", extraOptions); err != nil || !match {
 			fmt.Println("参数有误")
 		} else {
 			http.Run(extraOptions)

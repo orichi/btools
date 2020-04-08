@@ -39,9 +39,10 @@ func ExportFile(filename string, host string, data [][]byte) (string, error) {
 func CreateExportFile(filename string) (string, error) {
 	_, err := os.Stat(Folder)
 	if err != nil {
-		log.Println(err)
-		os.Mkdir(Folder, 0755)
-		err = nil
+		err = os.Mkdir(Folder, 0755)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	f, err := os.Create(Folder + filename)
@@ -55,7 +56,7 @@ func CreateExportFile(filename string) (string, error) {
 }
 
 // AppendExportFile 添加内容到导出文件
-func AppendExportFile(filename string, host string, data [][]byte) error {
+func AppendExportFile(filename string, data []string) error {
 	f, err := os.OpenFile(Folder+filename, os.O_APPEND|os.O_WRONLY, 0666)
 	defer f.Close()
 
@@ -64,7 +65,6 @@ func AppendExportFile(filename string, host string, data [][]byte) error {
 	}
 
 	for _, bytesItem := range data {
-		fmt.Fprint(f, host)
 		fmt.Fprint(f, string(bytesItem))
 	}
 

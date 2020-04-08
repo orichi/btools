@@ -53,7 +53,7 @@ func AddReqItem(reqURL string) (*ReqItem, error) {
 	return item, nil
 }
 
-func (reqItem *ReqItem) ParseM3u8() ([][]byte, error) {
+func (reqItem *ReqItem) ParseM3u8() ([]string, error) {
 
 loop:
 	req := &http.Request{
@@ -68,7 +68,7 @@ loop:
 	respBytes, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 
-	tsList, err, retryURL := ParseTsItems(resp.StatusCode, respBytes)
+	tsList, err, retryURL := ParseTsItems(reqItem.Host, resp.StatusCode, respBytes)
 	if retryURL != "" {
 		URL, err := url.Parse(reqItem.Host + retryURL)
 		if err != nil {
@@ -86,11 +86,11 @@ loop:
 }
 
 // ParseTsItems 解析ts列表
-func ParseTsItems(state int, Data []byte) ([][]byte, error, string) {
+func ParseTsItems(host string, state int, Data []byte) ([]string, error, string) {
 	if state != 200 {
 		return nil, ErrReqFail, ""
 	}
-	var tsItems = [][]byte{}
+	var tsItems []string
 	buffer := bytes.NewBuffer(Data)
 	for {
 		line, err := buffer.ReadBytes('\n')
@@ -104,7 +104,7 @@ func ParseTsItems(state int, Data []byte) ([][]byte, error, string) {
 		}
 
 		if regexTs.Match(line) {
-			tsItems = append(tsItems, line[0:lenLine])
+			tsItems = append(tsItems, host+string(line[0:lenLine]))
 			continue
 		}
 

@@ -1,13 +1,11 @@
 package cmd
 
 import (
-	"btools/pkg/service/export_file"
-	"btools/pkg/service/parse_tools"
+	"btools/pkg/service/parse_and_export"
 	"btools/pkg/service/parse_upload"
 	"errors"
+	"fmt"
 	"os"
-	"strconv"
-	"time"
 )
 
 var (
@@ -26,15 +24,7 @@ func Start(sourceFile string) error {
 		return err
 	}
 
-	exportName := strconv.FormatInt(time.Now().Unix(), 10) + "_ts.txt"
-	export_file.CreateExportFile(exportName)
-	for _, item := range listData {
-		req, _ := parse_tools.AddReqItem(item)
-		data, err := req.ParseM3u8()
-		if err == nil {
-			export_file.AppendExportFile(exportName, req.Host, data)
-		}
-	}
-
+	filePath, _ := parse_and_export.Process(listData)
+	fmt.Println("写入文件:", filePath)
 	return nil
 }
