@@ -4,11 +4,12 @@ import (
 	"btools/pkg/service/export_file"
 	"btools/pkg/service/parse_tools"
 	"bufio"
-	"fmt"
 	"os"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -43,7 +44,7 @@ func Process(urlList []string) (string, error) {
 
 				if err == nil {
 					if tsList, err := reqItem.ParseM3u8(); err != nil {
-						fmt.Println("Err,", err.Error())
+						logrus.Error(err.Error())
 					} else {
 						for _, item := range tsList {
 							tsChan <- item

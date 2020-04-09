@@ -1,6 +1,7 @@
 package parse_tools
 
 import (
+	"btools/pkg/configure"
 	"bytes"
 	"crypto/tls"
 	"errors"
@@ -19,7 +20,7 @@ var (
 	ErrParseUrl = errors.New("URL解析失败")
 
 	// 超时时间自行设置
-	httpClient = http.Client{Timeout: 30 * time.Second, Transport: &http.Transport{
+	httpClient = http.Client{Timeout: time.Duration(configure.Conf.HttpWaitPeriod) * time.Second, Transport: &http.Transport{
 		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
 		MaxIdleConnsPerHost: 1000,
 	}}

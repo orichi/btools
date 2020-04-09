@@ -4,3 +4,4 @@ main
 *.txt
 *.zip
 m3uservice
+log/*.log

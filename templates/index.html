@@ -8,9 +8,24 @@
     <title>{{.title}}</title>
 </head>
 <body>
-<form action="{{.path}}" accept-charset="UTF-8" method="post" enctype="multipart/form-data">
-    <input type="file" name="file" accept="*/*">
-    <input type="submit" value="上传处理">
-</form>
+<h3 style="text-align: center; margin-top: 100px">视频索引文件解析</h3>
+<div style="width: 300px; height: auto;min-height: 300px; margin: 40px auto">
+    {{if .error}}
+        <p style="color: red">
+            {{.error}}
+        </p>
+    {{end}}
+
+    <form action="{{.path}}" accept-charset="UTF-8" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept="text/plain" style="height: 50px;line-height: normal;"><br/>
+        <input type="submit" value="解析处理"><br/>
+        <p>
+            <span style="font-size: 14px;color: gray;">注意：  每次仅处理前{{.max_line}}条记录</span>
+        </p>
+
+    </form>
+</div>
+
+
 </body>
 </html>

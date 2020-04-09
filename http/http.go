@@ -2,6 +2,8 @@ package http
 
 import (
 	"btools/http/controller"
+	"btools/http/middleware"
+	"btools/pkg/configure"
 	"log"
 	"net/http"
 
@@ -10,12 +12,15 @@ import (
 
 func Run(addr string) {
 	r := gin.Default()
+	r.Use(middleware.LoggerMiddleware())
+	r.MaxMultipartMemory = 10 << 20 // 最大附件大小10M
 	r.LoadHTMLGlob("templates/*")
 
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", gin.H{
-			"title": "请上传文件",
-			"path":  "/ts_list",
+			"title":    "请上传文件",
+			"path":     "/ts_list",
+			"max_line": configure.Conf.MaxLine,
 		})
 	})
 

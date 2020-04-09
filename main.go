@@ -3,6 +3,7 @@ package main
 import (
 	"btools/cmd"
 	"btools/http"
+	"btools/pkg/configure"
 	"fmt"
 	"os"
 	"regexp"
@@ -52,7 +53,7 @@ func main() {
 	if len(os.Args) >= 3 {
 		extraOptions = os.Args[2]
 	}
-
+	configure.Init()
 	if runMethod == "http" {
 		if match, err := regexp.MatchString("([0-9a-z].)*?:[0-9]+", extraOptions); err != nil || !match {
 			fmt.Println("参数有误")
