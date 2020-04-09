@@ -24,41 +24,49 @@ func Process(urlList []string) (string, error) {
 		return "", err
 	}
 
-	var tsListChan = make(chan []string, 5000)
-	var wg = new(sync.WaitGroup)
+	var listChan = make(chan string, 20)
+	var tsChan = make(chan string, 5000)
 	// 把url发送到请求chan里
-	wg.Add(len(urlList))
-	go func(group *sync.WaitGroup) {
-		for _, item := range urlList {
-			wg.Done()
-			reqItem, err := parse_tools.AddReqItem(item)
-			if err == nil {
-				if tsList, err := reqItem.ParseM3u8(); err != nil {
-					fmt.Println("err", err)
-				} else {
-					tsListChan <- tsList
-				}
-			}
+	go func() {
+		for i := 0; i < len(urlList); i++ {
+			listChan <- urlList[i]
 		}
-		close(tsListChan)
-	}(wg)
-	wg.Wait()
+		close(listChan)
+	}()
 
+	go func() {
+		var wg = new(sync.WaitGroup)
+		for url := range listChan {
+			wg.Add(1)
+			go func(url string) {
+				reqItem, err := parse_tools.AddReqItem(url)
+
+				if err == nil {
+					if tsList, err := reqItem.ParseM3u8(); err != nil {
+						fmt.Println("Err,", err.Error())
+					} else {
+						for _, item := range tsList {
+							tsChan <- item
+						}
+					}
+					wg.Done()
+				}
+
+			}(url)
+		}
+		wg.Wait()
+		close(tsChan)
+	}()
 	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, 0666)
 	defer f.Close()
 	buf := bufio.NewWriterSize(f, bufferSize)
 
 	for {
-		tsArray, ok := <-tsListChan
+		tsItem, ok := <-tsChan
 		if !ok {
 			break
 		}
-		for _, item := range tsArray {
-			_, err = buf.WriteString(item)
-			if err != nil {
-				continue
-			}
-		}
+		buf.WriteString(tsItem)
 	}
 	buf.Flush()
 

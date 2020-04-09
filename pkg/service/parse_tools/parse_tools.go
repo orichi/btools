@@ -18,12 +18,14 @@ var (
 	ErrNotFound = errors.New("未找到")
 	ErrParseUrl = errors.New("URL解析失败")
 
-	httpClient = http.Client{Timeout: 10 * time.Second, Transport: &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	// 超时时间自行设置
+	httpClient = http.Client{Timeout: 30 * time.Second, Transport: &http.Transport{
+		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
+		MaxIdleConnsPerHost: 1000,
 	}}
 
-	regexM3u8 = regexp.MustCompile(".m3u8")
-	regexTs   = regexp.MustCompile(".ts")
+	regexM3u8 = regexp.MustCompile("\\.m3u8")
+	regexTs   = regexp.MustCompile("\\.ts")
 )
 
 type ReqItem struct {
@@ -66,7 +68,7 @@ loop:
 	}
 
 	respBytes, err := ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
+	resp.Body.Close()
 
 	tsList, err, retryURL := ParseTsItems(reqItem.Host, resp.StatusCode, respBytes)
 	if retryURL != "" {
@@ -93,23 +95,23 @@ func ParseTsItems(host string, state int, Data []byte) ([]string, error, string)
 	var tsItems []string
 	buffer := bytes.NewBuffer(Data)
 	for {
-		line, err := buffer.ReadBytes('\n')
+		line, err := buffer.ReadString('\n')
 
 		if err != nil {
 			break
 		}
 		lenLine := len(line)
-		if lenLine > 4 && string(line[0:4]) == "#EXT" {
+		if lenLine > 4 && line[0:4] == "#EXT" {
 			continue
 		}
 
-		if regexTs.Match(line) {
-			tsItems = append(tsItems, host+string(line[0:lenLine]))
+		if regexTs.MatchString(line) {
+			tsItems = append(tsItems, host+line)
 			continue
 		}
 
-		if regexM3u8.Match(line) {
-			return nil, nil, strings.TrimSpace(string(line))
+		if regexM3u8.MatchString(line) {
+			return nil, nil, strings.TrimSpace(line)
 		}
 	}
 

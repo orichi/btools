@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"runtime"
 )
 
 var (
@@ -39,6 +40,7 @@ var (
 )
 
 func main() {
+	runtime.GOMAXPROCS(4)
 	// listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 	if len(os.Args) <= 1 {
 		fmt.Println("请加上参数调用\n \t[-v|-h|http|file]")
