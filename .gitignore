@@ -5,3 +5,4 @@ main
 *.zip
 m3uservice
 log/*.log
+service

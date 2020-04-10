@@ -52,10 +52,10 @@ func GetTsList(c *gin.Context) {
 	if configure.Conf.MaxLine < nums {
 		toBeDealSize = configure.Conf.MaxLine
 	}
-	filePath, _ := parse_and_export.Process(listData[:toBeDealSize])
+
+	data := parse_and_export.Process(listData[:toBeDealSize])
 
 	//fmt.Sprintf("attachment; filename=%s", filename)对下载的文件重命名
 	c.Writer.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename=%s", "ts_"+formFile.Filename))
-	c.Writer.Header().Add("Content-Type", "application/octet-stream")
-	c.File(filePath)
+	c.Data(http.StatusOK, "application/octet-stream", data)
 }

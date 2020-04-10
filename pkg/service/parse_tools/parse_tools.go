@@ -3,27 +3,45 @@ package parse_tools
 import (
 	"btools/pkg/configure"
 	"bytes"
+	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/viki-org/dnscache"
 )
 
 var (
-	ErrReqFail = errors.New("请求失败")
-
+	ErrReqFail  = errors.New("请求失败")
 	ErrNotFound = errors.New("未找到")
 	ErrParseUrl = errors.New("URL解析失败")
-
-	// 超时时间自行设置
-	httpClient = http.Client{Timeout: time.Duration(configure.Conf.HttpWaitPeriod) * time.Second, Transport: &http.Transport{
+	ctx, _      = context.WithTimeout(nil, 5*time.Second)
+	dnsCache    = dnscache.New(time.Minute * 5)
+	transport   = &http.Transport{
 		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
-		MaxIdleConnsPerHost: 1000,
-	}}
+		MaxIdleConnsPerHost: 100,
+		DialContext: func(ctx context.Context, network string, address string) (net.Conn, error) {
+			separator := strings.LastIndex(address, ":")
+			ip, _ := dnsCache.FetchOneString(address[:separator])
+			var a = new(net.Dialer)
+			a.Timeout = 3 * time.Second    // 连接超时
+			a.KeepAlive = 60 * time.Second //
+			return a.DialContext(ctx, "tcp", ip+address[separator:])
+		},
+		IdleConnTimeout: 90,
+	}
+	// 超时时间自行设置
+	httpClient = http.Client{
+		Timeout:   time.Duration(configure.Conf.HttpWaitPeriod) * time.Second,
+		Transport: transport,
+	}
 
 	regexM3u8 = regexp.MustCompile("\\.m3u8")
 	regexTs   = regexp.MustCompile("\\.ts")
@@ -65,11 +83,16 @@ loop:
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		fmt.Println("请求失败:", err.Error())
+		return nil, ErrReqFail
+	}
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("请求失败:", resp.StatusCode)
+		return nil, ErrNotFound
 	}
 
 	respBytes, err := ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
+	defer resp.Body.Close()
 
 	tsList, err, retryURL := ParseTsItems(reqItem.Host, resp.StatusCode, respBytes)
 	if retryURL != "" {

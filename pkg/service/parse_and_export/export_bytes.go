@@ -1,29 +1,17 @@
 package parse_and_export
 
 import (
-	"btools/pkg/service/export_file"
 	"btools/pkg/service/parse_tools"
-	"bufio"
-	"os"
-	"strconv"
+	"bytes"
 	"sync"
-	"time"
 
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	bufferSize = 2 << 20 // 缓存大小为1m
-)
-
 // Process
 // 处理m3u8列表，然后写入文件，并返回文件的路径
-func Process(urlList []string) (string, error) {
-	exportName := strconv.FormatInt(time.Now().Unix(), 10) + "_ts.txt"
-	filePath, err := export_file.CreateExportFile(exportName)
-	if err != nil {
-		return "", err
-	}
+func Process(urlList []string) []byte {
+	var bufferData = new(bytes.Buffer)
 
 	var listChan = make(chan string, 20)
 	var tsChan = make(chan string, 5000)
@@ -58,18 +46,14 @@ func Process(urlList []string) (string, error) {
 		wg.Wait()
 		close(tsChan)
 	}()
-	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, 0666)
-	defer f.Close()
-	buf := bufio.NewWriterSize(f, bufferSize)
 
 	for {
 		tsItem, ok := <-tsChan
 		if !ok {
 			break
 		}
-		buf.WriteString(tsItem)
+		bufferData.WriteString(tsItem)
 	}
-	buf.Flush()
 
-	return filePath, nil
+	return bufferData.Bytes()
 }
